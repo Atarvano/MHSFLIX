@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MHSFlix</title>
+    <link rel="stylesheet" href="src/css/index.css" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <a href="#" class="logo">MHSFLIX</a>
+
+      <div class="hamburger">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+      </div>
+
+      <div class="nav-menu">
+        <ul class="nav-list">
+          <li class="nav-item"><a href="index.html">Home</a></li>
+          <li class="nav-item"><a href="film.html">Movie</a></li>
+          <li class="nav-item"><a href="pricing.html">Subscription</a></li>
+          <li class="nav-item"><a href="about.html">About Us</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- Overlay for mobile menu -->
+    <div class="overlay"></div>
+
+    <!-- slider -->
+    <div class="slider">
+      <div class="list" id="sliderList"></div>
+      <div class="arrows">
+        <button id="prev"><</button>
+        <button id="next">></button>
+      </div>
+      <div class="thumbnail" id="thumbnailList"></div>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-container">
+        <div class="footer-section about">
+          <h3 class="footer-title">MHSFLIX</h3>
+          <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Obcaecati
+            quidem quibusdam blanditiis et impedit. Rerum nam temporibus nobis
+            excepturi odio.
+          </p>
+        </div>
+
+        <div class="footer-section links">
+          <h4 class="footer-subtitle">Menu</h4>
+          <ul>
+            <li><a href="#">Navbar 1</a></li>
+            <li><a href="#">Navbar 2</a></li>
+            <li><a href="#">Navbar 3</a></li>
+            <li><a href="#">Navbar 4</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section links">
+          <h4 class="footer-subtitle">Kategori</h4>
+          <ul>
+            <li><a href="#">Lorem 1</a></li>
+            <li><a href="#">Lorem 2</a></li>
+            <li><a href="#">Lorem 3</a></li>
+            <li><a href="#">Lorem 4</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-section contact">
+          <h4 class="footer-subtitle">MovieMHS</h4>
+          <div class="social-icons">
+            <a href="#"><i class="bi bi-facebook"></i></a>
+            <a href="#"><i class="bi bi-pinterest"></i></a>
+            <a href="#"><i class="bi bi-instagram"></i></a>
+          </div>
+
+          <div class="install-buttons">
+            <a href="#" class="install-btn">📱 Google Play</a>
+            <a href="#" class="install-btn">🍏 App Store</a>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      const hamburger = document.querySelector(".hamburger");
+      const navMenu = document.querySelector(".nav-menu");
+
+      hamburger.addEventListener("click", () => {
+        hamburger.classList.toggle("active");
+        navMenu.classList.toggle("active");
+        document.querySelector(".overlay").classList.toggle("active");
+      });
+
+      const API_KEY = "e950e51d5d49e85f7c2f17f01eb23ba3";
+      const IMG_BASE = "https://image.tmdb.org/t/p/original";
+
+      const sliderList = document.getElementById("sliderList");
+      const thumbnailList = document.getElementById("thumbnailList");
+      const prevBtn = document.getElementById("prev");
+      const nextBtn = document.getElementById("next");
+
+      let slides = [];
+      let thumbs = [];
+      let activeIndex = 0;
+      let autoPlay;
+
+      // Fetch 5 popular movies
+      async function initCarousel() {
+        try {
+          const response = await fetch(
+            `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=id-ID&page=1`
+          );
+          const data = await response.json();
+          const movies = data.results.slice(0, 6);
+
+          buildCarousel(movies);
+          startAutoPlay();
+        } catch (error) {
+          console.error("Failed to load carousel:", error);
+        }
+      }
+
+      function buildCarousel(movies) {
+        sliderList.innerHTML = "";
+        thumbnailList.innerHTML = "";
+
+        movies.forEach((movie, index) => {
+          // Create slide
+          const slide = document.createElement("div");
+          slide.className = "item" + (index === 0 ? " active" : "");
+          slide.innerHTML = `<img src="${
+            IMG_BASE + movie.backdrop_path
+          }" alt="${movie.title}">`;
+          sliderList.appendChild(slide);
+
+          const thumb = document.createElement("div");
+          thumb.className = "item" + (index === 0 ? " active" : "");
+          thumb.innerHTML = `<img src="${IMG_BASE + movie.poster_path}" alt="${
+            movie.title
+          }">`;
+          thumb.addEventListener("click", () => showSlide(index));
+          thumbnailList.appendChild(thumb);
+        });
+
+        slides = Array.from(sliderList.children);
+        thumbs = Array.from(thumbnailList.children);
+
+        nextBtn.onclick = () => showSlide(activeIndex + 1);
+        prevBtn.onclick = () => showSlide(activeIndex - 1);
+      }
+
+      // Show slide by index
+      function showSlide(index) {
+        clearInterval(autoPlay);
+        startAutoPlay();
+
+        if (index < 0) index = slides.length - 1;
+        if (index >= slides.length) index = 0;
+        activeIndex = index;
+
+        slides.forEach((slide) => slide.classList.remove("active"));
+        thumbs.forEach((thumb) => thumb.classList.remove("active"));
+        slides[activeIndex].classList.add("active");
+        thumbs[activeIndex].classList.add("active");
+
+        const rect = thumbs[activeIndex].getBoundingClientRect();
+        if (rect.left < 0 || rect.right > window.innerWidth) {
+          thumbs[activeIndex].scrollIntoView({
+            behavior: "smooth",
+            inline: "nearest",
+          });
+        }
+      }
+
+      // Auto-play every 5 seconds
+      function startAutoPlay() {
+        autoPlay = setInterval(() => showSlide(activeIndex + 1), 5000);
+      }
+
+      // Initialize carousel
+      initCarousel();
+    </script>
+  </body>
+</html>
